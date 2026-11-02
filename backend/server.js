@@ -23,11 +23,8 @@ const configuredOrigins = (process.env.FRONTEND_URL || "")
   .map((url) => url.trim().replace(/\/+$/, ""))
   .filter(Boolean);
 const allowedOrigins = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:5174",
-  "http://localhost:3000",
+  "http://localhost:5000",
+  "http://127.0.0.1:5000",
   ...configuredOrigins,
 ];
 
@@ -591,6 +588,71 @@ async function seedAdminFromEnvironment() {
   }
 }
 
+async function seedProductsIfEmpty() {
+  await connectDatabase();
+  const productCount = await Product.countDocuments({});
+  if (productCount >= 30) return;
+
+  const products = [
+    ["Radiance Vitamin C Serum", "MIRA", "Tinh chất vitamin C giúp da sáng và đều màu.", 429000, 50, "/images/product-vitamin-c.jpg", 1],
+    ["Hydrating Face Cream", "MIRA", "Kem dưỡng ẩm giúp da mềm mịn suốt cả ngày.", 359000, 40, "/images/product-cream.jpg", 1],
+    ["Gentle Skin Cleanser", "MIRA", "Sữa rửa mặt dịu nhẹ phù hợp mọi loại da.", 249000, 60, "/images/product-cleanser.jpg", 1],
+    ["Brightening Essence", "MIRA", "Tinh chất cấp ẩm và làm sáng da.", 389000, 35, "/images/product-essence.jpg", 1],
+    ["Night Repair Cream", "MIRA", "Kem dưỡng ban đêm hỗ trợ phục hồi da.", 469000, 30, "/images/product-night-cream.jpg", 1],
+    ["Daily Sun Gel SPF50+", "MIRA", "Gel chống nắng nhẹ tênh, không nhờn rít.", 319000, 45, "/images/product-sun-gel.jpg", 3],
+    ["Hydrating Body Lotion", "MIRA", "Dưỡng thể cấp ẩm cho da mềm mại.", 299000, 40, "/images/product-body-lotion.jpg", 4],
+    ["Silk Matte Lipstick", "MIRA", "Son lì mịn môi với sắc màu bền màu.", 289000, 55, "/images/product-lipstick.jpg", 2],
+    ["Natural Glow Foundation", "MIRA", "Kem nền che phủ nhẹ, mang lại vẻ tự nhiên.", 399000, 25, "/images/product-foundation.jpg", 2],
+    ["Floral Eau de Parfum", "MIRA", "Hương hoa cỏ thanh lịch và lưu hương lâu.", 549000, 20, "/images/product-perfume-floral.jpg", 5],
+    ["Repairing Hair Shampoo", "MIRA", "Dầu gội giúp tóc sạch mềm và dễ chải.", 279000, 35, "/images/product-shampoo.jpg", 1],
+    ["Volumizing Mascara", "MIRA", "Mascara làm dài và cong mi tự nhiên.", 329000, 30, "/images/product-mascara.jpg", 2],
+    ["Refreshing Toner", "MIRA", "Nước cân bằng da, cấp ẩm và làm dịu.", 259000, 50, "/images/product-toner.jpg", 1],
+    ["Hydrating Face Serum", "MIRA", "Tinh chất dưỡng ẩm giúp da căng mọng.", 449000, 40, "/images/product-serum.jpg", 1],
+    ["Daily Face Mist", "MIRA", "Xịt khoáng cấp ẩm tức thì cho da.", 219000, 45, "/images/product-face-mist.jpg", 1],
+    ["Tinted Daily Sunscreen", "MIRA", "Kem chống nắng tông màu nhẹ tự nhiên.", 349000, 35, "/images/product-tinted-sunscreen.jpg", 3],
+    ["Protective Sun Cream", "MIRA", "Kem chống nắng bảo vệ da dưới ánh nắng.", 339000, 40, "/images/product-sun-cream.jpg", 3],
+    ["Classic Sunscreen SPF50", "MIRA", "Sản phẩm chống nắng phổ rộng SPF50.", 329000, 45, "/images/product-sunscreen.jpg", 3],
+    ["Nourishing Hand Cream", "MIRA", "Kem dưỡng tay mềm mịn, không nhờn.", 189000, 60, "/images/product-hand-cream.jpg", 4],
+    ["Exfoliating Body Scrub", "MIRA", "Tẩy tế bào chết giúp da sáng mịn.", 269000, 35, "/images/product-body-scrub.jpg", 4],
+    ["Gentle Body Wash", "MIRA", "Sữa tắm làm sạch dịu nhẹ và lưu hương.", 239000, 50, "/images/product-body-wash.jpg", 4],
+    ["Citrus Eau de Parfum", "MIRA", "Hương cam chanh tươi mát, tràn đầy năng lượng.", 529000, 25, "/images/product-perfume-citrus.jpg", 5],
+    ["Floral Perfume Mist", "MIRA", "Xịt thơm cơ thể hương hoa nhẹ nhàng.", 289000, 40, "/images/product-perfume-mist.jpg", 5],
+    ["Luxury Perfume Gift Set", "MIRA", "Bộ quà tặng nước hoa sang trọng.", 799000, 15, "/images/product-perfume-gift-set.jpg", 5],
+    ["Silky Hair Conditioner", "MIRA", "Kem xả giúp tóc mềm mượt và óng ả.", 299000, 35, "/images/product-conditioner.jpg", 1],
+    ["Radiant Blush", "MIRA", "Phấn má tạo sắc hồng tự nhiên.", 249000, 40, "/images/product-blush.jpg", 2],
+    ["Perfect Concealer", "MIRA", "Che khuyết điểm, làm đều sắc da.", 279000, 35, "/images/product-concealer.jpg", 2],
+    ["Glam Eyeshadow Palette", "MIRA", "Bảng màu mắt đa dạng cho trang điểm.", 399000, 25, "/images/product-eyeshadow.jpg", 2],
+    ["Natural Highlighter", "MIRA", "Phấn bắt sáng tạo hiệu ứng khỏe khoắn.", 269000, 30, "/images/product-highlighter.jpg", 2],
+    ["Long-lasting Setting Spray", "MIRA", "Xịt khóa trang điểm giúp lớp makeup lâu trôi.", 319000, 30, "/images/product-setting-spray.jpg", 2],
+  ];
+
+  for (const [index, [ProductName, Brand, Description, Price, StockQuantity, ImageUrl, CategoryId]] of products.entries()) {
+    await Product.updateOne(
+      { ProductId: index + 1 },
+      {
+        $setOnInsert: {
+          ProductId: index + 1,
+          CategoryId,
+          ProductName,
+          Brand,
+          Description,
+          Price,
+          StockQuantity,
+          ImageUrl,
+          IsActive: true,
+        },
+      },
+      { upsert: true }
+    );
+  }
+  await Counter.findOneAndUpdate(
+    { _id: "products" },
+    { $max: { SequenceValue: products.length } },
+    { upsert: true }
+  );
+  console.log(`Initialized ${products.length} products in MongoDB.`);
+}
+
 const frontendDist = path.resolve(__dirname, "../frontend/dist");
 app.use(express.static(frontendDist));
 app.get(/^(?!\/api(?:\/|$)).*/, (req, res, next) => {
@@ -601,6 +663,11 @@ app.get(/^(?!\/api(?:\/|$)).*/, (req, res, next) => {
 
 (async () => {
   await seedAdminFromEnvironment();
+  try {
+    await seedProductsIfEmpty();
+  } catch (error) {
+    console.error("Product initialization skipped:", error.message);
+  }
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`MIRA Beauty Shop is running on port ${PORT}`);
   });

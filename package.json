@@ -5,7 +5,7 @@
   "scripts": {
     "install:all": "npm --prefix frontend ci && npm --prefix backend ci",
     "build": "npm --prefix frontend run build",
-    "start": "npm --prefix backend start",
+    "start": "npm run build && npm --prefix backend start",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev"
   }
