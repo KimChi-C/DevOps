@@ -577,6 +577,9 @@ async function seedAdminFromEnvironment() {
     let user = await User.findOne({ Email: email });
     if (user) {
       user.Role = "Admin";
+      const { salt, hash } = hashPassword(password);
+      user.PasswordSalt = salt;
+      user.PasswordHash = hash;
       await user.save();
     } else {
       const { salt, hash } = hashPassword(password);
