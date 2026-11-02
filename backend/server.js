@@ -22,17 +22,25 @@ const configuredOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
   .map((url) => url.trim().replace(/\/+$/, ""))
   .filter(Boolean);
+
 const allowedOrigins = [
   "http://localhost:5000",
   "http://127.0.0.1:5000",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://mira-beauty-shop.onrender.com",
   ...configuredOrigins,
 ];
 
 app.use(cors({
   origin(origin, callback) {
-    const allowed = !origin || allowedOrigins.includes(origin) ||
+    const allowed =
+      !origin ||
+      allowedOrigins.includes(origin) ||
       /^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i.test(origin);
+
     if (allowed) return callback(null, true);
+
     console.error("CORS blocked Origin:", origin);
     return callback(new Error("CORS: Origin không được phép"));
   },
