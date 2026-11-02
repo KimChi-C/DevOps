@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables (chứa mật khẩu DB, JWT secret,...)
+.env
+*.env
+
+# Build outputs
+dist/
+build/
+
+# Logs & OS files
+*.log
+.DS_Store
+.vscode/
