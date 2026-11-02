@@ -43,6 +43,16 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "1mb" }));
 
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
+    return res.status(400).json({
+      success: false,
+      message: "Dữ liệu JSON trong yêu cầu không hợp lệ.",
+    });
+  }
+  next(error);
+});
+
 function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
   return { salt, hash: crypto.scryptSync(password, salt, 64).toString("hex") };
 }
