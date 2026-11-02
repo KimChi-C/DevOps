@@ -1,62 +1,25 @@
+const mongoose = require("mongoose");
 
-require("dotenv").config();
+let connectionPromise;
 
-const windowsAuth =
-  (process.env.DB_AUTH || "windows").toLowerCase() === "windows";
-
-const sql = windowsAuth
-  ? require("mssql/msnodesqlv8")
-  : require("mssql");
-
-const config = {
-  server: process.env.DB_SERVER || "localhost",
-  database: process.env.DB_NAME || "MiraBeautyShopDb",
-  driver: windowsAuth
-    ? process.env.DB_ODBC_DRIVER || "ODBC Driver 18 for SQL Server"
-    : undefined,
-  options: {
-    encrypt: process.env.DB_ENCRYPT === "true",
-    trustServerCertificate:
-      process.env.DB_TRUST_SERVER_CERTIFICATE === "true",
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-  connectionTimeout: 30000,
-  requestTimeout: 30000,
-};
-
-if (windowsAuth) {
-  config.server = process.env.DB_SERVER || "localhost";
-  config.options.instanceName =
-    process.env.DB_INSTANCE || "SQLEXPRESS";
-  config.options.trustedConnection = true;
-} else {
-  config.user = process.env.DB_USER;
-  config.password = process.env.DB_PASSWORD;
-
-  if (!config.user || !config.password) {
-    throw new Error(
-      "Thiếu DB_USER hoặc DB_PASSWORD khi sử dụng SQL Authentication"
-    );
+async function connectDatabase() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("MONGODB_URI chưa được cấu hình.");
   }
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  if (!connectionPromise) {
+    mongoose.set("strictQuery", true);
+    connectionPromise = mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 10000,
+      maxPoolSize: 10,
+      minPoolSize: 0,
+    }).catch((error) => {
+      connectionPromise = null;
+      throw error;
+    });
+  }
+  return connectionPromise;
 }
 
-let poolPromise;
-
-async function getPool() {
-  if (!poolPromise) {
-    poolPromise = new sql.ConnectionPool(config)
-      .connect()
-      .catch((error) => {
-        poolPromise = null;
-        throw error;
-      });
-  }
-
-  return poolPromise;
-}
-
-module.exports = { sql, getPool };
+module.exports = { connectDatabase, mongoose };

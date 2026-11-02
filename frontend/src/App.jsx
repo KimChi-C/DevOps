@@ -613,7 +613,11 @@ function App() {
   function authFetch(url, options = {}) {
     return fetch(url, {
       ...options,
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${user?.token || ""}`, ...(options.headers || {}) },
+      headers: {
+        "Content-Type": "application/json",
+        ...(user?.token ? { Authorization: "Bearer " + user.token } : {}),
+        ...(options.headers || {}),
+      },
     });
   }
 

@@ -1,10 +1,10 @@
-# MIRA Beauty Shop – unified JavaScript deployment
+# MIRA Beauty Shop – MongoDB Atlas và Render/Vercel
 
-The project keeps the existing React/Vite frontend and Express backend, but the production runtime is a single Node.js/Express application and one Docker image. Express serves `frontend/dist` and handles `/api/*`. SQL Server remains an external database (for example AWS RDS).
+Backend Express sử dụng MongoDB Atlas qua Mongoose. Frontend React/Vite tiếp tục deploy riêng trên Vercel và gọi backend Render qua `VITE_API_URL`.
 
 ## Local development
 
-1. Copy `backend/.env.example` to `backend/.env` and fill in your own local SQL Server credentials.
+1. Copy `backend/.env.example` to `backend/.env` và điền `MONGODB_URI` thực của MongoDB Atlas.
 2. Install dependencies:
    ```powershell
    npm run install:all
@@ -25,42 +25,32 @@ The project keeps the existing React/Vite frontend and Express backend, but the 
    ```
    Open http://localhost:5000 and test http://localhost:5000/api/health.
 
-## Docker (one image)
+## Render
 
-Build from the repository root:
-```powershell
-docker build -t mira-beauty-shop:latest .
-```
-Run (supply database values via environment variables; do not bake secrets into the image):
-```powershell
-docker run --rm -p 5000:5000 `
-  -e PORT=5000 `
-  -e DB_SERVER="YOUR_RDS_ENDPOINT" `
-  -e DB_NAME="MiraBeautyShopDb" `
-  -e DB_USER="YOUR_SQL_LOGIN" `
-  -e DB_PASSWORD="YOUR_PASSWORD" `
-  -e DB_ENCRYPT=true `
-  -e DB_TRUST_SERVER_CERTIFICATE=true `
-  -e TOKEN_SECRET="YOUR_LONG_RANDOM_SECRET" `
-  mira-beauty-shop:latest
-```
+Tạo Web Service với:
+- Root Directory: `backend`
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Environment:
+  - `MONGODB_URI`: connection string MongoDB Atlas
+  - `TOKEN_SECRET`: chuỗi ngẫu nhiên dài
+  - `FRONTEND_URL`: danh sách origin frontend Vercel, ngăn cách bằng dấu phẩy
+  - `ADMIN_EMAIL`, `ADMIN_PASSWORD` nếu cần khởi tạo tài khoản admin
 
-Test:
-- http://localhost:5000/
-- http://localhost:5000/api/health
-- http://localhost:5000/api/db-check
+Trong Atlas, cho phép IP truy cập Render (Atlas Network Access); nếu dùng IP allowlist, Render có thể cần `0.0.0.0/0` hoặc Static Egress IP phù hợp gói dịch vụ.
 
-## AWS deployment notes
+## Vercel
 
-- Push this single image to one ECR repository.
-- Run one ECS Fargate service/container with container port 5000.
-- Inject `DB_PASSWORD` from AWS Secrets Manager in the ECS task definition; do not put it in the image or source control.
-- Set `DB_SERVER`, `DB_NAME`, `DB_USER`, `DB_ENCRYPT=true`, `DB_TRUST_SERVER_CERTIFICATE=true`, and a strong `TOKEN_SECRET` as task environment/secrets.
-- RDS security group inbound TCP 1433 should allow only the ECS task security group, not `0.0.0.0/0`.
-- ECS and RDS must be in a network configuration that permits private connectivity.
-- After changing a Secrets Manager value, deploy new ECS tasks so the container reads the new secret.
-- The existing database login failure (`miraadmin`) is an AWS SQL authentication issue; this code change does not reset that SQL Server password.
+Thêm biến môi trường:
+- `VITE_API_URL=https://YOUR_RENDER_SERVICE.onrender.com/api`
 
-## Important
+Sau đó build lại frontend. Không đưa connection string MongoDB hoặc secret vào biến `VITE_*`.
 
-The archive intentionally excludes `.env`, `node_modules`, `.git`, and build output. Existing `.env` values from the supplied archive are not copied because they contained sensitive credentials. Create local `.env` from the examples and set AWS values in ECS/Secrets Manager.
+## Migration dữ liệu SQL sang MongoDB
+
+1. Xuất dữ liệu thật từ các bảng `MiraUsers`, `Products`, `MiraOrders` và `MiraOrderItems` thành JSON.
+2. Đặt các file đúng tên: `MiraUsers.json`, `Products.json`, `MiraOrders.json`, `MiraOrderItems.json`.
+3. Trong `backend/.env`, đặt `MONGODB_URI` và `SQL_EXPORT_DIR` trỏ tới thư mục export.
+4. Chạy: `npm --prefix backend run migrate:mongo`.
+
+Script dùng upsert theo `UserId`, `ProductId` và `OrderId`; nó không tạo dữ liệu mẫu.
